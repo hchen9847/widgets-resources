@@ -88,5 +88,8 @@
       "@commitlint/config-lerna-scopes",
       "@commitlint/config-conventional"
     ]
+  },
+  "engines" : {
+    "node" : ">=14"
   }
 }
