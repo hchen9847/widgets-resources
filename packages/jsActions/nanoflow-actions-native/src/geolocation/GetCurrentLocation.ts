@@ -35,26 +35,26 @@ export async function GetCurrentLocation(
 ): Promise<mendix.lib.MxObject> {
     // BEGIN USER CODE
 
-    let rnGeolocation: Geolocation | GeolocationStatic | GeolocationServiceStatic;
+    let geolocationModule: Geolocation | GeolocationStatic | GeolocationServiceStatic;
 
     if (navigator && navigator.product === "ReactNative") {
         if (NativeModules.RNFusedLocation) {
             const geolocationService = await import("react-native-geolocation-service");
-            rnGeolocation = geolocationService.default;
+            geolocationModule = geolocationService.default;
         } else if (NativeModules.RNCGeolocation) {
-            rnGeolocation = Geolocation;
+            geolocationModule = Geolocation;
         } else {
             return Promise.reject(new Error("Geolocation module could not be found"));
         }
     } else if (navigator && navigator.geolocation) {
-        rnGeolocation = navigator.geolocation;
+        geolocationModule = navigator.geolocation;
     } else {
         return Promise.reject(new Error("Geolocation module could not be found"));
     }
 
     return new Promise((resolve, reject) => {
         const options = getOptions();
-        rnGeolocation.getCurrentPosition(onSuccess, onError, options);
+        geolocationModule.getCurrentPosition(onSuccess, onError, options);
 
         function onSuccess(position: GeolocationResponse | GeoPosition): void {
             mx.data.create({

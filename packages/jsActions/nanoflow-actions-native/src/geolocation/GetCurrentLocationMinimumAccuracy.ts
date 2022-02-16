@@ -37,19 +37,19 @@ export async function GetCurrentLocationMinimumAccuracy(
 ): Promise<mendix.lib.MxObject> {
     // BEGIN USER CODE
 
-    let rnGeolocation: Geolocation | GeolocationStatic | GeolocationServiceStatic;
+    let geolocationModule: Geolocation | GeolocationStatic | GeolocationServiceStatic;
 
     if (navigator && navigator.product === "ReactNative") {
         if (NativeModules.RNFusedLocation) {
             const geolocationService = await import("react-native-geolocation-service");
-            rnGeolocation = geolocationService.default;
+            geolocationModule = geolocationService.default;
         } else if (NativeModules.RNCGeolocation) {
-            rnGeolocation = Geolocation;
+            geolocationModule = Geolocation;
         } else {
             return Promise.reject(new Error("Geolocation module could not be found"));
         }
     } else if (navigator && navigator.geolocation) {
-        rnGeolocation = navigator.geolocation;
+        geolocationModule = navigator.geolocation;
     } else {
         return Promise.reject(new Error("Geolocation module could not be found"));
     }
@@ -60,7 +60,7 @@ export async function GetCurrentLocationMinimumAccuracy(
         // This action is only required while running in PWA or hybrid.
         if (navigator && (!navigator.product || navigator.product !== "ReactNative")) {
             // This ensures the browser will not ignore the maximumAge https://stackoverflow.com/questions/3397585/navigator-geolocation-getcurrentposition-sometimes-works-sometimes-doesnt/31916631#31916631
-            rnGeolocation.getCurrentPosition(
+            geolocationModule.getCurrentPosition(
                 // eslint-disable-next-line @typescript-eslint/no-empty-function
                 () => {},
                 // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -69,7 +69,7 @@ export async function GetCurrentLocationMinimumAccuracy(
             );
         }
 
-        const watchId: number = rnGeolocation.watchPosition(onSuccess, onError, options);
+        const watchId: number = geolocationModule.watchPosition(onSuccess, onError, options);
         const timeStart = Date.now();
         let lastAccruedPosition: GeolocationResponse | GeoPosition;
 
@@ -84,7 +84,7 @@ export async function GetCurrentLocationMinimumAccuracy(
 
         function onSuccess(position: GeolocationResponse | GeoPosition): void {
             if (watchId && (!minimumAccuracy || minimumAccuracy >= position.coords.accuracy)) {
-                rnGeolocation.clearWatch(watchId);
+                geolocationModule.clearWatch(watchId);
                 createGeolocationObject(position);
             } else {
                 if (!lastAccruedPosition || position.coords.accuracy < lastAccruedPosition.coords.accuracy) {
@@ -92,7 +92,7 @@ export async function GetCurrentLocationMinimumAccuracy(
                 }
                 const timeDiff = Date.now() - timeStart;
                 if (!timeout || timeout.lte(timeDiff)) {
-                    rnGeolocation.clearWatch(watchId);
+                    geolocationModule.clearWatch(watchId);
                     createGeolocationObject(lastAccruedPosition);
                 }
             }

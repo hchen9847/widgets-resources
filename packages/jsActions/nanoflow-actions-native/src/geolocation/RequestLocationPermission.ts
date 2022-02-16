@@ -15,19 +15,19 @@ import type { GeolocationServiceStatic, AuthorizationResult } from "../../typing
 export async function RequestLocationPermission(): Promise<boolean> {
     // BEGIN USER CODE
 
-    let rnGeolocation: Geolocation | GeolocationStatic | GeolocationServiceStatic;
+    let geolocationModule: Geolocation | GeolocationStatic | GeolocationServiceStatic;
 
     if (navigator && navigator.product === "ReactNative") {
         if (NativeModules.RNFusedLocation) {
             const geolocationService = await import("react-native-geolocation-service");
-            rnGeolocation = geolocationService.default;
+            geolocationModule = geolocationService.default;
         } else if (NativeModules.RNCGeolocation) {
-            rnGeolocation = Geolocation;
+            geolocationModule = Geolocation;
         } else {
             return Promise.reject(new Error("Geolocation module could not be found"));
         }
     } else if (navigator && navigator.geolocation) {
-        rnGeolocation = navigator.geolocation;
+        geolocationModule = navigator.geolocation;
     } else {
         return Promise.reject(new Error("Geolocation module could not be found"));
     }
@@ -39,7 +39,7 @@ export async function RequestLocationPermission(): Promise<boolean> {
             });
         };
 
-        return (rnGeolocation as GeolocationServiceStatic)
+        return (geolocationModule as GeolocationServiceStatic)
             .requestAuthorization("whenInUse")
             .then((status: AuthorizationResult) => {
                 if (status === "granted") {
@@ -114,9 +114,9 @@ export async function RequestLocationPermission(): Promise<boolean> {
                           status => status === PermissionsAndroid.RESULTS.GRANTED
                       )
             );
-        } else if (rnGeolocation && (rnGeolocation as GeolocationStatic).requestAuthorization) {
+        } else if (geolocationModule && (geolocationModule as GeolocationStatic).requestAuthorization) {
             try {
-                (rnGeolocation as GeolocationStatic).requestAuthorization();
+                (geolocationModule as GeolocationStatic).requestAuthorization();
                 return Promise.resolve(true);
             } catch (error) {
                 return Promise.reject(error);
