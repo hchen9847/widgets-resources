@@ -2,7 +2,7 @@ const { execSync } = require("child_process");
 const findFreePort = require("find-free-port");
 const fetch = require("node-fetch");
 const { join, resolve } = require("path");
-const { cat, cp, ls, mkdir, rm, tempdir } = require("shelljs");
+const { cat, cp, ls, mkdir, rm, tempdirm, mv } = require("shelljs");
 const { pipeline } = require("stream");
 const { promisify } = require("util");
 const { createWriteStream } = require("fs");
@@ -22,19 +22,16 @@ async function main() {
 
     const testArchivePath = await getTestProject("https://github.com/mendix/Native-Mobile-Resources", "main");
     const root = resolve(join(__dirname, "../.."));
-    const tempDir = join(root, "testProject");
+    const t = join(root, "tests");
+    const tempDir = join(root, "tests/testProject");
     try {
-        mkdir("-p", tempDir);
-        execSync(`unzip -o ${testArchivePath} -d ${tempDir}`);
+        mkdir("-p", t);
+        execSync(`unzip -o ${testArchivePath} -d ${t}`);
+        mv(`${t}/Native-Mobile-Resources-main`, tempDir);
         rm("-f", testArchivePath);
     } catch (e) {
         throw new Error("Failed to unzip the test project into testProject", e.message);
     }
-
-    console.log("here");
-    console.log(tempDir);
-    console.log(ls(tempDir).toString());
-    console.log(ls(join(tempDir, "Native-Mobile-Resources-main").toString()));
 
     const output = execSync("npx lerna list --json --since origin/master --loglevel silent --scope '*-native'");
     const packages = JSON.parse(output);
@@ -45,8 +42,8 @@ async function main() {
         if (["mobile-resources-native", "nanoflow-actions-native"].includes(name)) {
             // for js actions
             const path = name === "mobile-resources-native" ? "nativemobileresources" : "nanoflowcommons";
-            const jsActionsPath = `${tempDir}/javascriptsource/actions/${path}`;
-            rm(jsActionsPath);
+            const jsActionsPath = `${tempDir}/javascriptsource/${path}/actions`;
+            rm("-rf", jsActionsPath);
             cp("-r", `${location}/dist`, jsActionsPath);
         } else {
             // for widgets
@@ -55,22 +52,19 @@ async function main() {
         }
     });
 
-    // todo: js actions
-
     // When running on CI pull the docker image from Github Container Registry
-
     if (ghcr) {
         console.log(`Pulling mxbuild docker image from Github Container Registry...`);
         execSync(`docker pull ${ghcr}mxbuild:${mendixVersion}`);
     }
 
     const existingImages = execSync(`docker image ls -q ${ghcr}mxbuild:${mendixVersion}`).toString().trim();
-    const scriptsPath = join(process.cwd(), "packages/tools/pluggable-widget-tools/scripts");
+    const scriptsPath = join(root, "packages/tools/pluggable-widgets-tools/scripts");
 
     if (!existingImages) {
         console.log(`Creating new mxbuild docker image...`);
         execSync(
-            `docker build -f ${join(scriptsPath, "mxbuild.Dockerfile")}` +
+            `docker build -f ${join(scriptsPath, "mxbuild.Dockerfile")} ` +
                 `--build-arg MENDIX_VERSION=${mendixVersion} ` +
                 `-t mxbuild:${mendixVersion} ${scriptsPath}`,
             { stdio: "inherit" }
@@ -95,24 +89,22 @@ async function main() {
 
     // Build testProject via mxbuild
     // todo: this is ugly, look for a better solution
-    const projectFile = "testProject/Native-Mobile-Resources-main/NativeComponentsTestProject.mpr";
-    console.log(root);
-    console.log("ls root");
-    console.log(ls(root).stdout);
-    console.log(await stat(`${root}/testProject`));
+    const projectFile = `${tempDir}/NativeComponentsTestProject.mpr`;
     execSync(
+        // `docker run -t -v ${root}:/source -v ${tempDir}:/testProject ` +
         `docker run -t -v ${root}:/source ` +
-            `--rm ${ghcr}mxbuild:${mendixVersion} bash -c "ls /source && mx update-widgets --loose-version-check /source/${projectFile} && mxbuild ` +
-            `-o /tmp/automation.mda /source/${projectFile}"`,
+            `--rm ${ghcr}mxbuild:${mendixVersion} bash -c "mx update-widgets --loose-version-check /${projectFile} && mxbuild ` +
+            `-o /tmp/automation.mda /source/${tempDir}"`,
         { stdio: "inherit" }
     );
     console.log("Bundle created and all the widgets are updated");
 
     // Spin up the runtime and run testProject
     const freePort = await findFreePort(3000);
+    // todo: runtime docker image may not include metro, meaning we cant get a bundle. CHECK THIS OUT!!!!
     // todo: __dirname is wrong, should be widgets-resources/packages/tools/pluggable-widgets-tools/scripts
     const runtimeContainerId = execSync(
-        `docker run -td -v ${process.cwd()}:/source -v ${__dirname}:/shared:ro -w /source -p ${freePort}:8080 ` +
+        `docker run -td -v ${root}:/source -v ${scriptsPath}:/shared:ro -w /source -p ${freePort}:8080 ` +
             `-e MENDIX_VERSION=${mendixVersion} --entrypoint /bin/bash ` +
             `--rm ${ghcr}mxruntime:${mendixVersion} /shared/runtime.sh`
     )
