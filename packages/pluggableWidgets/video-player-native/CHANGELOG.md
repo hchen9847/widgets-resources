@@ -8,16 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
--   Android full screen support. Full screen icon can be found on top left of the video if show controls property is set to `true`, when the icon is pressed the video will continue working on an overlay modal.
+- Android full screen support. Full screen icon can be found on top left of the video if show controls property is set to `true`, when the icon is pressed the video will continue working on an overlay modal.
 
 ## [3.1.0] - 2022-1-24
 
 ### Added
 
--   Dark theme icons for Tile and List view.
+- Dark theme icons for Tile and List view.
 
 ## [3.0.0] - 2021-9-28
 
 ### Added
 
--   We added a toolbox category and toolbox tile image for Studio & Studio Pro.
+- We added a toolbox category and toolbox tile image for Studio & Studio Pro.
