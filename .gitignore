@@ -19,3 +19,5 @@ mendixProject
 **/screenshot-results
 **/tests/testProject
 **/pluggableWidgets/**/artifacts
+
+tests

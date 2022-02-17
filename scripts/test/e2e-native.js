@@ -2,7 +2,7 @@ const { execSync } = require("child_process");
 const findFreePort = require("find-free-port");
 const fetch = require("node-fetch");
 const { join, resolve } = require("path");
-const { cat, cp, ls, mkdir, rm, tempdirm, mv } = require("shelljs");
+const { cat, cp, mkdir, rm, mv } = require("shelljs");
 const { pipeline } = require("stream");
 const { promisify } = require("util");
 const { createWriteStream } = require("fs");
@@ -89,22 +89,23 @@ async function main() {
 
     // Build testProject via mxbuild
     // todo: this is ugly, look for a better solution
-    const projectFile = `${tempDir}/NativeComponentsTestProject.mpr`;
+    const projectFile = "/source/tests/testProject/NativeComponentsTestProject.mpr";
     execSync(
         // `docker run -t -v ${root}:/source -v ${tempDir}:/testProject ` +
         `docker run -t -v ${root}:/source ` +
-            `--rm ${ghcr}mxbuild:${mendixVersion} bash -c "mx update-widgets --loose-version-check /${projectFile} && mxbuild ` +
-            `-o /tmp/automation.mda /source/${tempDir}"`,
+            `--rm ${ghcr}mxbuild:${mendixVersion} bash -c "mx update-widgets --loose-version-check ${projectFile} && mxbuild ` +
+            `-o /tmp/automation.mda ${projectFile}"`,
         { stdio: "inherit" }
     );
     console.log("Bundle created and all the widgets are updated");
 
     // Spin up the runtime and run testProject
-    const freePort = await findFreePort(3000);
+    const freePort = 8080;
+    // const freePort = await findFreePort(3000);
     // todo: runtime docker image may not include metro, meaning we cant get a bundle. CHECK THIS OUT!!!!
     // todo: __dirname is wrong, should be widgets-resources/packages/tools/pluggable-widgets-tools/scripts
     const runtimeContainerId = execSync(
-        `docker run -td -v ${root}:/source -v ${scriptsPath}:/shared:ro -w /source -p ${freePort}:8080 ` +
+        `docker run -td -v ${root}:/source -v ${scriptsPath}:/shared:ro -w /source -p ${freePort}:8080 -p 8083:8083 ` +
             `-e MENDIX_VERSION=${mendixVersion} --entrypoint /bin/bash ` +
             `--rm ${ghcr}mxruntime:${mendixVersion} /shared/runtime.sh`
     )
@@ -129,9 +130,10 @@ async function main() {
         if (attempts === 0) {
             throw new Error("Runtime didn't start in time, existing now...");
         }
-        const changedPackages = packages.map(package => package.name).join(" ");
-        execSync("npm run setup:android");
-        execSync(`lerna run test:e2e:local:android --stream --concurrency 1 --scope ${changedPackages}`);
+        const changedPackages = packages.map(package => package.name).join(",");
+        execSync("npm run setup-android");
+        // https://github.com/lerna/lerna/issues/1846
+        execSync(`npx lerna run test:e2e:local:android --stream --concurrency 1 --scope '{${changedPackages},}'`);
     } catch (e) {
         try {
             execSync(`docker logs ${runtimeContainerId}`, { stdio: "inherit" });
