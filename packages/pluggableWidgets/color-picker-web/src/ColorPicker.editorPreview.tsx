@@ -11,7 +11,7 @@ export function preview(props: ColorPickerPreviewProps): ReactNode {
             tabIndex={undefined}
             color={"#3A65E5"}
             disabled={props.readOnly}
-            mode={props.mode}
+            mode={props.displayMode === "advanced" ? props.advancedDisplay : props.displayMode}
             type={props.type}
             defaultColors={props.defaultColors}
             name={"mx-color-picker"}

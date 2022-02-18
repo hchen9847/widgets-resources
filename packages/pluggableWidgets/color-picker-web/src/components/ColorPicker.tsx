@@ -1,6 +1,12 @@
 import { createElement, ReactElement, useEffect, useState, useCallback } from "react";
 import { Alert } from "@mendix/piw-utils-internal/components/web";
-import { ModeEnum, TypeEnum, DefaultColorsType, FormatEnum } from "../../typings/ColorPickerProps";
+import {
+    TypeEnum,
+    DefaultColorsType,
+    FormatEnum,
+    AdvancedDisplayEnum,
+    DisplayModeEnum
+} from "../../typings/ColorPickerProps";
 import {
     ColorState,
     SketchPickerProps,
@@ -26,7 +32,7 @@ export interface ColorPickerProps {
     tabIndex?: number | undefined;
     onChange: () => void;
     onColorChange: (value: string) => void;
-    mode: ModeEnum;
+    mode: DisplayModeEnum | AdvancedDisplayEnum;
     type: TypeEnum;
     color: string | undefined;
     defaultColors: DefaultColorsType[];

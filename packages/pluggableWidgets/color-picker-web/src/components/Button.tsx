@@ -1,10 +1,10 @@
 import { createElement, ReactElement } from "react";
 import classNames from "classnames";
-import { ModeEnum } from "../../typings/ColorPickerProps";
+import { DisplayModeEnum, AdvancedDisplayEnum } from "../../typings/ColorPickerProps";
 
 export interface ButtonProps {
     color: string | undefined;
-    mode: ModeEnum;
+    mode: DisplayModeEnum | AdvancedDisplayEnum;
     onClick: () => void;
     disabled: boolean;
 }
