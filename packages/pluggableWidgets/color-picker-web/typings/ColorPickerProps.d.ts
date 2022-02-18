@@ -5,22 +5,24 @@
  */
 import { ActionValue, DynamicValue, EditableValue } from "mendix";
 
-export type FormatEnum = "hex" | "rgb" | "rgba";
+export type DisplayModeEnum = "popover" | "advanced";
 
-export type ModeEnum = "input" | "popover" | "inline";
+export type AdvancedDisplayEnum = "input" | "inline";
 
 export type TypeEnum =
-    | "sketch"
-    | "chrome"
     | "block"
-    | "github"
-    | "twitter"
+    | "chrome"
     | "circle"
-    | "hue"
-    | "slider"
     | "compact"
+    | "github"
+    | "hue"
     | "material"
-    | "swatches";
+    | "sketch"
+    | "slider"
+    | "swatches"
+    | "twitter";
+
+export type FormatEnum = "hex" | "rgb" | "rgba";
 
 export interface DefaultColorsType {
     color: string;
@@ -35,9 +37,11 @@ export interface ColorPickerContainerProps {
     tabIndex?: number;
     id: string;
     colorAttribute: EditableValue<string>;
-    format: FormatEnum;
-    mode: ModeEnum;
+    advanced: boolean;
+    displayMode: DisplayModeEnum;
+    advancedDisplay: AdvancedDisplayEnum;
     type: TypeEnum;
+    format: FormatEnum;
     defaultColors: DefaultColorsType[];
     invalidFormatMessage?: DynamicValue<string>;
     onChange?: ActionValue;
@@ -46,9 +50,11 @@ export interface ColorPickerContainerProps {
 export interface ColorPickerPreviewProps {
     readOnly: boolean;
     colorAttribute: string;
-    format: FormatEnum;
-    mode: ModeEnum;
+    advanced: boolean;
+    displayMode: DisplayModeEnum;
+    advancedDisplay: AdvancedDisplayEnum;
     type: TypeEnum;
+    format: FormatEnum;
     defaultColors: DefaultColorsPreviewType[];
     invalidFormatMessage: string;
     onChange: {} | null;
