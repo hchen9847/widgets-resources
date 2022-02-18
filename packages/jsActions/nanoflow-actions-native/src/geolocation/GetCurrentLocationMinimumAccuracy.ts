@@ -19,7 +19,7 @@ import type { GeolocationServiceStatic, GeoError, GeoPosition, GeoOptions } from
  *
  * Since this can compromise privacy, the position is not available unless the user approves it. The web browser will request the permission at the first time the location is requested. When denied by the user it will not prompt a second time.
  *
- * On hybrid and native platforms the permission can be requested with the `RequestLocationPermission` action.
+ * On hybrid and native platforms the permission should be requested with the `RequestLocationPermission` action.
  *
  * Best practices:
  * https://developers.google.com/web/fundamentals/native-hardware/user-location/
