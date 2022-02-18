@@ -5,17 +5,33 @@ import {
     RowLayoutProps,
     StructurePreviewProps,
     TextProps,
-    transformGroupsIntoTabs
+    transformGroupsIntoTabs,
+    hidePropertyIn,
+    hidePropertiesIn
 } from "@mendix/piw-utils-internal";
 import { ColorPickerPreviewProps } from "../typings/ColorPickerProps";
 import StructurePreviewSvg from "./assets/structure-preview.svg";
 import StructurePreviewSvgDark from "./assets/structure-preview-dark.svg";
 
+const defaultColorTypes = ["block", "sketch", "circle", "compact", "twitter"];
+
 export function getProperties(
-    __values: ColorPickerPreviewProps,
+    values: ColorPickerPreviewProps,
     defaultProperties: Properties,
     platform: "web" | "desktop"
 ): Properties {
+    if (!values.advanced) {
+        hidePropertiesIn(defaultProperties, values, ["type", "defaultColors", "format"]);
+    }
+    if (values.displayMode === "popover") {
+        hidePropertiesIn(defaultProperties, values, ["advancedDisplay"]);
+    }
+    if (values.displayMode === "advanced" && values.advancedDisplay === "inline") {
+        hidePropertyIn(defaultProperties, values, "invalidFormatMessage");
+    }
+    if (!defaultColorTypes.includes(values.type)) {
+        hidePropertyIn(defaultProperties, values, "defaultColors");
+    }
     if (platform === "web") {
         transformGroupsIntoTabs(defaultProperties);
     }
@@ -29,7 +45,7 @@ function getRectangleSvg(isDarkMode: boolean): string {
 }
 
 export const getPreview = (values: ColorPickerPreviewProps, isDarkMode: boolean): StructurePreviewProps => {
-    if (values.mode === "inline") {
+    if (values.displayMode === "advanced" && values.advancedDisplay === "inline") {
         return {
             type: "Image",
             document: decodeURIComponent(
@@ -55,7 +71,7 @@ export const getPreview = (values: ColorPickerPreviewProps, isDarkMode: boolean)
         borderRadius: 5,
         borderWidth: 1,
         children: [
-            ...(values.mode === "popover" ? [separator] : []),
+            ...(values.displayMode === "popover" ? [separator] : []),
             {
                 type: "Container",
                 padding: 8,
@@ -68,7 +84,7 @@ export const getPreview = (values: ColorPickerPreviewProps, isDarkMode: boolean)
                     } as ImageProps
                 ]
             } as ContainerProps,
-            ...(values.mode === "popover" ? [separator] : [])
+            ...(values.displayMode === "popover" ? [separator] : [])
         ]
     } as RowLayoutProps;
 
@@ -76,7 +92,7 @@ export const getPreview = (values: ColorPickerPreviewProps, isDarkMode: boolean)
         type: "RowLayout",
         columnSize: "grow",
         children:
-            values.mode === "input"
+            values.displayMode === "advanced" && values.advancedDisplay === "input"
                 ? [
                       {
                           type: "RowLayout",
