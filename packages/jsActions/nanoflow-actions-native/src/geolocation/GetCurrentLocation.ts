@@ -13,7 +13,7 @@ import Geolocation, {
 } from "@react-native-community/geolocation";
 
 import type { Platform, NativeModules } from "react-native";
-import type { GeolocationServiceStatic, GeoError, GeoPosition, GeoOptions } from "../../typings/Geolocation";
+import type { GeoError, GeoPosition, GeoOptions } from "../../typings/Geolocation";
 
 /**
  * This action retrieves the current geographical position of a user/device.
@@ -37,7 +37,11 @@ export async function GetCurrentLocation(
     // BEGIN USER CODE
 
     let reactNativeModule: { NativeModules: typeof NativeModules; Platform: typeof Platform } | undefined;
-    let geolocationModule: Geolocation | GeolocationStatic | GeolocationServiceStatic;
+    let geolocationModule:
+        | Geolocation
+        | GeolocationStatic
+        | typeof import("react-native-geolocation-service")
+        | undefined;
 
     if (navigator && navigator.product === "ReactNative") {
         reactNativeModule = await import("react-native");
@@ -57,7 +61,7 @@ export async function GetCurrentLocation(
 
     return new Promise((resolve, reject) => {
         const options = getOptions();
-        geolocationModule.getCurrentPosition(onSuccess, onError, options);
+        geolocationModule?.getCurrentPosition(onSuccess, onError, options);
 
         function onSuccess(position: GeolocationResponse | GeoPosition): void {
             mx.data.create({

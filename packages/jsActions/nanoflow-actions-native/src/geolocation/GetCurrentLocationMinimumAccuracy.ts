@@ -13,7 +13,7 @@ import Geolocation, {
 } from "@react-native-community/geolocation";
 
 import type { Platform, NativeModules } from "react-native";
-import type { GeolocationServiceStatic, GeoError, GeoPosition, GeoOptions } from "../../typings/Geolocation";
+import type { GeoError, GeoPosition, GeoOptions } from "../../typings/Geolocation";
 
 /**
  * This action retrieves the current geographical position of a user/device with a minimum accuracy as parameter. If a position is not acquired with minimum accuracy within a specific timeout it will retrieve the last most precise location.
@@ -39,7 +39,11 @@ export async function GetCurrentLocationMinimumAccuracy(
     // BEGIN USER CODE
 
     let reactNativeModule: { NativeModules: typeof NativeModules; Platform: typeof Platform } | undefined;
-    let geolocationModule: Geolocation | GeolocationStatic | GeolocationServiceStatic;
+    let geolocationModule:
+        | Geolocation
+        | GeolocationStatic
+        | typeof import("react-native-geolocation-service")
+        | undefined;
 
     if (navigator && navigator.product === "ReactNative") {
         reactNativeModule = await import("react-native");
@@ -58,6 +62,10 @@ export async function GetCurrentLocationMinimumAccuracy(
     }
 
     return new Promise((resolve, reject) => {
+        if (!geolocationModule) {
+            return reject(new Error("Geolocation module could not be found"));
+        }
+
         const options = getOptions();
 
         // This action is only required while running in PWA or hybrid.
@@ -87,7 +95,7 @@ export async function GetCurrentLocationMinimumAccuracy(
 
         function onSuccess(position: GeolocationResponse | GeoPosition): void {
             if (watchId && (!minimumAccuracy || minimumAccuracy >= position.coords.accuracy)) {
-                geolocationModule.clearWatch(watchId);
+                geolocationModule?.clearWatch(watchId);
                 createGeolocationObject(position);
             } else {
                 if (!lastAccruedPosition || position.coords.accuracy < lastAccruedPosition.coords.accuracy) {
@@ -95,7 +103,7 @@ export async function GetCurrentLocationMinimumAccuracy(
                 }
                 const timeDiff = Date.now() - timeStart;
                 if (!timeout || timeout.lte(timeDiff)) {
-                    geolocationModule.clearWatch(watchId);
+                    geolocationModule?.clearWatch(watchId);
                     createGeolocationObject(lastAccruedPosition);
                 }
             }
