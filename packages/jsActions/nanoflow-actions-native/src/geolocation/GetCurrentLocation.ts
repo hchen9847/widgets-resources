@@ -5,13 +5,14 @@
 // Other code you write will be lost the next time you deploy the project.
 
 import { Big } from "big.js";
-import { Platform, NativeModules } from "react-native";
 import Geolocation, {
     GeolocationError,
     GeolocationOptions,
     GeolocationResponse,
     GeolocationStatic
 } from "@react-native-community/geolocation";
+
+import type { Platform, NativeModules } from "react-native";
 import type { GeolocationServiceStatic, GeoError, GeoPosition, GeoOptions } from "../../typings/Geolocation";
 
 /**
@@ -35,13 +36,15 @@ export async function GetCurrentLocation(
 ): Promise<mendix.lib.MxObject> {
     // BEGIN USER CODE
 
+    let reactNativeModule: { NativeModules: typeof NativeModules; Platform: typeof Platform } | undefined;
     let geolocationModule: Geolocation | GeolocationStatic | GeolocationServiceStatic;
 
     if (navigator && navigator.product === "ReactNative") {
-        if (NativeModules.RNFusedLocation) {
+        reactNativeModule = await import("react-native");
+        if (reactNativeModule.NativeModules.RNFusedLocation) {
             const geolocationService = await import("react-native-geolocation-service");
             geolocationModule = geolocationService.default;
-        } else if (NativeModules.RNCGeolocation) {
+        } else if (reactNativeModule.NativeModules.RNCGeolocation) {
             geolocationModule = Geolocation;
         } else {
             return Promise.reject(new Error("Geolocation module could not be found"));
@@ -79,7 +82,7 @@ export async function GetCurrentLocation(
             // If the timeout is 0 or undefined (empty), it causes a crash on iOS.
             // If the timeout is undefined (empty); we set timeout to 30 sec (default timeout)
             // If the timeout is 0; we set timeout to 1 hour (no timeout)
-            if (Platform.OS === "ios") {
+            if (reactNativeModule?.Platform.OS === "ios") {
                 if (timeoutNumber === undefined) {
                     timeoutNumber = 30000;
                 } else if (timeoutNumber === 0) {
