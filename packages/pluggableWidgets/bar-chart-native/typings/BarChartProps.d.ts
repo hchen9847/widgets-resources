@@ -28,6 +28,14 @@ export interface BarSeriesType {
 
 export type SortOrderEnum = "ascending" | "descending";
 
+export interface TickValuesObjectType {
+    tickValue: number;
+}
+
+export interface TickFormatObjectType {
+    tickFormat: string;
+}
+
 export interface BarSeriesPreviewType {
     dataSet: DataSetEnum;
     staticDataSource: {} | { type: string } | null;
@@ -43,6 +51,14 @@ export interface BarSeriesPreviewType {
     dynamicCustomBarStyle: string;
 }
 
+export interface TickValuesObjectPreviewType {
+    tickValue: number | null;
+}
+
+export interface TickFormatObjectPreviewType {
+    tickFormat: string;
+}
+
 export interface BarChartProps<Style> {
     name: string;
     style: Style[];
@@ -53,6 +69,8 @@ export interface BarChartProps<Style> {
     showLegend: boolean;
     xAxisLabel?: DynamicValue<string>;
     yAxisLabel?: DynamicValue<string>;
+    tickValuesObject: TickValuesObjectType[];
+    tickFormatObject: TickFormatObjectType[];
 }
 
 export interface BarChartPreviewProps {
@@ -67,4 +85,6 @@ export interface BarChartPreviewProps {
     showLegend: boolean;
     xAxisLabel: string;
     yAxisLabel: string;
+    tickValuesObject: TickValuesObjectPreviewType[];
+    tickFormatObject: TickFormatObjectPreviewType[];
 }

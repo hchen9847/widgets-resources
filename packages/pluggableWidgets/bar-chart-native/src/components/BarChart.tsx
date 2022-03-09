@@ -3,12 +3,10 @@ import { LayoutChangeEvent, Text, View } from "react-native";
 import { VictoryAxis, VictoryBar, VictoryChart, VictoryGroup, VictoryStack } from "victory-native";
 import { BarProps } from "victory-bar";
 import { extractStyles } from "@mendix/pluggable-widgets-tools";
-
 import { BarChartStyle } from "../ui/Styles";
-import { SortOrderEnum } from "../../typings/BarChartProps";
+import { SortOrderEnum, TickValuesObjectType, TickFormatObjectType } from "../../typings/BarChartProps";
 import { Legend } from "./Legend";
 import { aggregateGridPadding, mapToAxisStyle, mapToGridStyle, mapToBarStyles } from "../utils/StyleUtils";
-
 export interface BarChartProps {
     name: string;
     series: BarChartSeries[];
@@ -17,11 +15,13 @@ export interface BarChartProps {
     presentation: string;
     showLegend: boolean;
     showLabels: boolean;
+    // HC Added in categorical axis props
+    tickValuesObject: TickValuesObjectType[];
+    tickFormatObject: TickFormatObjectType[];
     xAxisLabel?: string;
     yAxisLabel?: string;
     warningPrefix?: string;
 }
-
 export interface BarChartSeries {
     dataPoints: BarDataPoints;
     xFormatter?: (xValue: number | Date | string) => string;
@@ -29,7 +29,6 @@ export interface BarChartSeries {
     name?: string;
     customBarStyle?: string;
 }
-
 export type BarDataPoints =
     | Array<BarDataPoint<number, number>>
     | Array<BarDataPoint<number, Date>>
@@ -40,12 +39,10 @@ export type BarDataPoints =
     | Array<BarDataPoint<string, Date>>
     | Array<BarDataPoint<number, string>>
     | Array<BarDataPoint<Date, string>>;
-
 export interface BarDataPoint<X extends number | Date | string, Y extends number | Date | string> {
     x: X;
     y: Y;
 }
-
 export function BarChart({
     name,
     presentation,
@@ -56,56 +53,45 @@ export function BarChart({
     showLegend,
     sortOrder,
     style,
-    warningPrefix
+    warningPrefix,
+    tickValuesObject,
+    tickFormatObject
 }: BarChartProps): ReactElement | null {
     const [chartDimensions, setChartDimensions] = useState<{ height: number; width: number }>();
-
     const warningMessagePrefix = useMemo(() => (warningPrefix ? warningPrefix + "i" : "I"), [warningPrefix]);
-
     const dataTypesResult = useMemo(() => getDataTypes(series), [series]);
-
     // Bar Chart user-styling may be missing for certain series. A palette is passed, any missing colours
     // fallback to a colour from the palette.
     const normalizedBarColors: string[] = useMemo(() => {
         const barColorPalette = style.bars?.barColorPalette?.split(";");
         let index = 0;
-
         return series.map(_series => {
             const configuredStyle = !_series.customBarStyle
                 ? null
                 : style.bars?.customBarStyles?.[_series.customBarStyle]?.bar?.barColor;
-
             if (typeof configuredStyle !== "string") {
                 const barColor = barColorPalette?.[index] || "black";
-
                 if (barColorPalette) {
                     index = index + 1 === barColorPalette.length ? 0 : index + 1;
                 }
-
                 return barColor;
             }
-
             return configuredStyle;
         });
     }, [series, style]);
-
     const sortProps = useMemo(() => ({ sortOrder, sortKey: "x" }), [sortOrder]);
-
     const groupedOrStacked = useMemo(() => {
         if (!dataTypesResult || dataTypesResult instanceof Error) {
             return null;
         }
-
         // datum.y is actually the X axis data points due to the way Victory handles horizontal charts
         const bars = series.map(({ customBarStyle, dataPoints }, index) => {
             const seriesStyle =
                 style.bars?.customBarStyles && customBarStyle ? style.bars.customBarStyles[customBarStyle] : undefined;
-
             const barStyles = mapToBarStyles(normalizedBarColors[index], seriesStyle);
-
             return (
                 <VictoryBar
-                    //commented out by MC horizontal
+                    // commented out by MC horizontal
                     key={index}
                     data={dataPoints}
                     width={barStyles.width}
@@ -123,7 +109,6 @@ export function BarChart({
                 />
             );
         });
-
         if (presentation === "grouped") {
             return (
                 <VictoryGroup offset={style.bars?.barsOffset} colorScale={normalizedBarColors}>
@@ -131,7 +116,6 @@ export function BarChart({
                 </VictoryGroup>
             );
         }
-
         return <VictoryStack colorScale={normalizedBarColors}>{bars}</VictoryStack>;
     }, [
         dataTypesResult,
@@ -143,13 +127,20 @@ export function BarChart({
         normalizedBarColors,
         presentation
     ]);
-
     const [firstSeries] = series;
-
+    // let firstTickValue = {};
+    // let firstTickFormat = {};
+    // if (tickValuesObject!.length > 0) {
+    //     firstTickValue = tickValuesObject![0];
+    // }
+    // if (tickFormatObject!.length > 0) {
+    //     firstTickFormat = tickFormatObject![0];
+    // }
+    console.log(tickFormatObject);
+    console.log(tickValuesObject);
     const axisLabelStyles = useMemo(() => {
         const [extractedXAxisLabelStyle, xAxisLabelStyle] = extractStyles(style.xAxis?.label, ["relativePositionGrid"]);
         const [extractedYAxisLabelStyle, yAxisLabelStyle] = extractStyles(style.yAxis?.label, ["relativePositionGrid"]);
-
         if (
             !(
                 extractedXAxisLabelStyle.relativePositionGrid === "bottom" ||
@@ -161,10 +152,8 @@ export function BarChart({
                     `${warningMessagePrefix}nvalid value for X axis label style property, relativePositionGrid, valid values are "bottom" and "right".`
                 );
             }
-
             extractedXAxisLabelStyle.relativePositionGrid = "bottom";
         }
-
         if (
             !(
                 extractedYAxisLabelStyle.relativePositionGrid === "top" ||
@@ -176,10 +165,8 @@ export function BarChart({
                     `${warningMessagePrefix}nvalid value for Y axis label style property, relativePositionGrid, valid values are "top" and "left".`
                 );
             }
-
             extractedYAxisLabelStyle.relativePositionGrid = "top";
         }
-
         return {
             extractedXAxisLabelStyle,
             xAxisLabelStyle,
@@ -187,10 +174,8 @@ export function BarChart({
             yAxisLabelStyle
         };
     }, [style, warningMessagePrefix]);
-
     const xAxisLabelComponent = <Text style={axisLabelStyles.xAxisLabelStyle}>{xAxisLabel}</Text>;
     const yAxisLabelComponent = <Text style={axisLabelStyles.yAxisLabelStyle}>{yAxisLabel}</Text>;
-
     const updateChartDimensions = useCallback(
         (event: LayoutChangeEvent) =>
             setChartDimensions({
@@ -199,7 +184,6 @@ export function BarChart({
             }),
         [setChartDimensions]
     );
-
     return (
         <View style={style.container} testID={name}>
             {dataTypesResult instanceof Error ? (
@@ -232,7 +216,7 @@ export function BarChart({
                                     >
                                         <VictoryAxis
                                             orientation={"bottom"}
-                                            //dependentAxis
+                                            // dependentAxis
                                             style={mapToAxisStyle(style.grid, style.xAxis)}
                                             {...(firstSeries?.xFormatter
                                                 ? { tickFormat: firstSeries.xFormatter }
@@ -241,10 +225,15 @@ export function BarChart({
                                         <VictoryAxis
                                             style={mapToAxisStyle(style.grid, style.yAxis)}
                                             orientation={"left"}
-                                            dependentAxis //added MC
-                                            {...(firstSeries?.yFormatter
-                                                ? { tickFormat: firstSeries.yFormatter }
-                                                : undefined)}
+                                            dependentAxis // added MC
+                                            tickValues={tickValuesObject.map(v => v.tickValue)}
+                                            tickFormat={tickFormatObject.map(f => f.tickFormat)}
+                                            // {...(firstTickFormat
+                                            //     ? { tickFormat: tickFormatObject }
+                                            //     : firstSeries?.yFormatter
+                                            //     ? { tickFormat: firstSeries.yFormatter }
+                                            //     : undefined)}
+                                            // {...(firstTickValue ? { tickValues: tickValuesObject } : undefined)}
                                         />
                                         {groupedOrStacked}
                                     </VictoryChart>
@@ -266,20 +255,15 @@ export function BarChart({
         </View>
     );
 }
-
 type DataTypeResult = { x: string; y: string };
-
 function getDataTypes(series: BarChartSeries[]): DataTypeResult | Error | undefined {
     let dataTypes: DataTypeResult | undefined;
-
     for (const _series of series) {
         const { dataPoints } = _series;
-
         if (dataPoints.length) {
             const { x, y } = dataPoints[0];
             const xDataType = typeof x;
             const yDataType = typeof y;
-
             if (!dataTypes) {
                 dataTypes = { x: xDataType, y: yDataType };
             } else if (dataTypes && (dataTypes.x !== xDataType || dataTypes.y !== yDataType)) {
@@ -287,16 +271,13 @@ function getDataTypes(series: BarChartSeries[]): DataTypeResult | Error | undefi
             }
         }
     }
-
     return dataTypes;
 }
-
 const getScale = (dataTypesResult: string): "linear" | "time" | undefined => {
     if (dataTypesResult === "number" || dataTypesResult === "string") {
         return "linear";
     } else if (dataTypesResult === "object") {
         return "time";
     }
-
     return undefined;
 };

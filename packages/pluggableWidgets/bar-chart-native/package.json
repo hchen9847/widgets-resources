@@ -9,7 +9,7 @@
     "url": "https://github.com/mendix/widgets-resources.git"
   },
   "config": {
-    "projectPath": "C:/Users/matthew.cha/MxModels/NativeBar-dev-main"
+    "projectPath": "C:\\Users\\Hardy.Chen\\Projects\\iSTRYM-Azure-c15n-branch\\widgets"
   },
   "packagePath": "com.mendix.widget.native",
   "scripts": {
